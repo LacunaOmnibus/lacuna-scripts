@@ -63,13 +63,33 @@ my $empire  = $glc->empire->get_status->{empire};
 my %planets = reverse %{ $empire->{planets} };
 
 foreach my $planet (@{$planets}) {
-    #next unless $planet eq 'Agartha';
+    #next unless $planet eq '';
     #next if grep { $planet eq $_ } qw(Agartha Annwn Cockaigne Canibri Embla);
     print "Training spies on $planet\n";
 
     my $body      = $glc->body( id => $planets{$planet} );
     my $buildings = $body->get_buildings->{buildings};
     #print "Buildings: ", Dumper($buildings);
+
+    # Get the ministry and check for trainable spies.
+    my $building_id = first {
+          $buildings->{$_}{name} eq 'Intelligence Ministry'
+        } keys %$buildings;
+    my $ministry = $glc->building( id => $building_id, type => 'Intelligence' );
+    #print Dumper($ministry);
+
+    # Get the spies here before checking schools as the server will otherwise
+    # sometimes mis-report the number of spies in training in a school
+    my $spies = [];
+    my $ok = eval {
+        my $view = $ministry->view_all_spies();
+        $spies = $view->{spies};
+    };
+    #print "Ministry: ", Dumper($spies);
+    unless (@{$spies}) {
+        print "No spies found for training on $planet\n";
+        next;
+    }
 
 
     my %schools = ();
@@ -92,29 +112,13 @@ foreach my $planet (@{$planets}) {
         };
         #print "$type building: ", Dumper($capacity);
 
+        #print "$type in_training: $capacity->{in_training}\n";
         next if $capacity->{in_training} >= 4;
 
         $schools{$type}{openings}   = 4 - $capacity->{in_training};
         $schools{$type}{max_points} = $capacity->{max_points};
     }
 
-
-    my $building_id = first {
-          $buildings->{$_}{name} eq 'Intelligence Ministry'
-        } keys %$buildings;
-    my $ministry = $glc->building( id => $building_id, type => 'Intelligence' );
-    #print Dumper($ministry);
-
-    my $spies = [];
-    my $ok = eval {
-        my $view = $ministry->view_all_spies();
-        $spies = $view->{spies};
-    };
-    #print "Ministry: ", Dumper($spies);
-    unless (@{$spies}) {
-        print "No spies found for training on $planet\n";
-        next;
-    }
 
     my %spies = ();
     foreach my $spy (@{$spies}) {
@@ -135,21 +139,13 @@ foreach my $planet (@{$planets}) {
             print "Renaming spy: $spy->{name} -> $name\n";
             $ministry->name_spy($spy->{id}, $name);
             $spy->{name} = $name;
-
-            # if a spy that was training maxed out (got lettered), mark them as
-            # available for re-assignment and make an opening at the school
-            if ($spy->{assignment} =~ /(\w+) Training/) {
-                my $lesson = lc($1);
-                $spy->{assignment} = 'Idle';
-                $schools{$lesson}{openings}++ if exists $schools{$lesson}{openings}
-                                               && $schools{$lesson}{openings} < 4;
-            }
         }
 
         if (@maxed == 4) {
             next if $spy->{assignment} eq 'Counter Espionage';
             my $result = $ministry->assign_spy($spy->{id}, 'Counter Espionage');
             print "$spy->{name} ($spy->{id}), Counter Espionage: $result->{mission}{result}\n";
+            next;
         }
         next if $spy->{assignment} =~ / Training/;
 
@@ -177,6 +173,7 @@ foreach my $planet (@{$planets}) {
     #print "Schools in session: ", Dumper(\%schools);
 
     foreach my $lesson (qw(intel politics theft mayhem)) {
+        #print "Checking $lesson - openings == $schools{$lesson}{openings}\n";
         next unless exists $schools{$lesson}{openings};
         next if $schools{$lesson}{openings} <= 0;
 
@@ -187,6 +184,7 @@ foreach my $planet (@{$planets}) {
         my $i = 1;
         foreach my $id (sort { $spies{$b}{$lesson} <=> $spies{$a}{$lesson} } keys %spies) {
             my $spy = $spies{$id};
+            #print "$spy->{name} current training: $spy->{$lesson} >= $schools{$lesson}{max_points}\n";
             next if $spy->{$lesson} >= $schools{$lesson}{max_points};
 
             #my ($test) = grep { $_->{id} eq $id } @{$spies};
