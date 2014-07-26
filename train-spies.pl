@@ -50,6 +50,13 @@ my %trainhash = (
     mayhem    => 'Mayhem Training',
 );
 
+# no spaces allowed in building names
+my %buildings = (
+    theft     => 'TheftTraining',
+    intel     => 'IntelTraining',
+    politics  => 'PoliticsTraining',
+    mayhem    => 'MayhemTraining',
+);
 
 my $glc = Games::Lacuna::Client->new(
     cfg_file       => $opts{config},
@@ -103,7 +110,7 @@ foreach my $planet (@{$planets}) {
         $schools{$type}{id} = $building_id;
 
         $schools{$type}{building} = $glc->building( id   => $building_id,
-                                                    type => $trainhash{$type} );
+                                                    type => $buildings{$type} );
 
         my $capacity;
         my $ok = eval {
