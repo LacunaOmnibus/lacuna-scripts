@@ -20,6 +20,7 @@ GetOptions( \%opts,
            'min=i',
            'empire=s',
            'sleep=f',
+           'bugout',
     );
 
 $opts{config}  ||= join('/', $opts{empire}, 'empire.yml');
@@ -41,6 +42,7 @@ my $planets = '';
     my $json_text = <$planets_fh>;
     $planets      = decode_json( $json_text );
 }
+print $Log "Have planets\n";
 
 
 my %trainhash = (
@@ -64,7 +66,11 @@ my $glc = Games::Lacuna::Client->new(
     rpc_sleep      => $opts{sleep},
     # debug    => 1,
 );
+print "Have game client\n";
+
+
 my $json = JSON->new->utf8(1);
+print "Have JSON object\n";
 
 my $empire  = $glc->empire->get_status->{empire};
 my %planets = reverse %{ $empire->{planets} };
@@ -128,10 +134,22 @@ foreach my $planet (@{$planets}) {
 
 
     my %spies = ();
+    my %offworld = ();
     foreach my $spy (@{$spies}) {
         #print "$spy->{name} $spy->{assignment}\n";
+        #if ($spy->{assigned_to}{name} ne $planet && ! $offworld{$planet}{ $spy->{assigned_to}{name} }++) {
+        #    print "'$spy->{assigned_to}{name}' ne '$planet'\n";
+        #}
+
         next unless $spy->{is_available};
-        next unless $spy->{assigned_to}{name} eq $planet;
+        
+        unless ($spy->{assigned_to}{name} eq $planet) {
+            if ($opts{bugout} && $spy->{assignment} eq 'Idle') {
+                my $result = $ministry->assign_spy($spy->{id}, 'Bugout');
+                print "$spy->{name} ($spy->{id}), Bugout from $spy->{assigned_to}{name}: $result->{mission}{result}\n";
+            }
+            next;
+        }
 
         my $name  = 'Agent ' . substr($planet,0,2);
         my @maxed = ();

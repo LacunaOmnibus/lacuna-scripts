@@ -58,7 +58,7 @@ use Exception::Class;
   $status->{planets} = \%planets;
 
   for my $planet_name (keys %planets) {
-    next if $planet_name =~ /^UNSC/; # skip alliance space stations
+    next if $planet_name =~ /^(UNSC|SASS|ZASS)/; # skip alliance space stations
 
     verbose("Inspecting $planet_name\n");
     my $planet    = $glc->body(id => $planets{$planet_name});

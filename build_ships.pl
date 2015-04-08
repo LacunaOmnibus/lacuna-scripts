@@ -10,6 +10,8 @@ use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client ();
 use utf8;
 
+use Data::Dumper;
+
 my @planets;
 my $cfg_file  = "lacuna.yml";
 my $yard_file = "data/shipyards.js";
@@ -129,7 +131,11 @@ while ($not_done) {
             print scalar @{ $yhash->{"$planet"}->{yards} },
               " Yards on $planet\n";
         }
-        for my $yard ( @{ $yhash->{"$planet"}->{yards} } ) {
+        for my $yard ( sort { $ydata->{$planet}{ $b->{id} }{level} <=> $ydata->{$planet}{ $a->{id} }{level} }
+                      @{ $yhash->{"$planet"}->{yards} } )
+        {
+            #print Dumper($ydata->{$planet}{$yard->{id}});
+            
             if ( $yhash->{"$planet"}->{keels} >= $yhash->{"$planet"}->{bldnum} )
             {
                 print $yhash->{"$planet"}->{keels}, " done for $planet\n";
