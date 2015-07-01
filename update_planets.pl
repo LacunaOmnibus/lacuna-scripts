@@ -18,9 +18,6 @@ print "=== Starting\n";
 
 GetOptions(\%opts, 'data=s', 'config=s', 'debug');
 
-open( my $planets_fh, ">", "$opts{data}" )
-    or die "Could not write to $opts{data}\n";
-
 unless ( $opts{config} and -e $opts{config} ) {
     $opts{config} = eval {
         require File::HomeDir;
@@ -67,6 +64,9 @@ print "\n";
 my $json = JSON->new->utf8(1);
 $json = $json->pretty(    [1] );
 $json = $json->canonical( [1] );
+
+open( my $planets_fh, ">", "$opts{data}" )
+    or die "Could not write to $opts{data}\n";
 
 print $planets_fh $json->pretty->canonical->encode(\@planet_names);
 close($planets_fh);

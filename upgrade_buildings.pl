@@ -183,6 +183,7 @@ PLANET: foreach my $planet (sort keys %{$upgrade_data}) {
         last if $buildings->{$id}{level} >= $opts{max};
         next if exists $buildings->{$id}{pending_build};
         next unless grep { $buildings->{$id}{name} =~ /$_/ } @names;
+        next if $buildings->{$id}{name} =~ /Junk/; # skip junk buildings - HACK
 
         # next planet if queue full
 

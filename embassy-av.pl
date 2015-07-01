@@ -24,6 +24,7 @@ my $stations = "$Bin/../data/stations.js";
 my $empires  = "$Bin/../data/av-empires.js";
 my $logfile  = "$Bin/../log/av.log";
 my $debug    = 0;
+my $fire_bfg = 0;
 my $do_list  = [ ];
 
 GetOptions(
@@ -34,6 +35,7 @@ GetOptions(
     'empires=s'  => \$empires,
     'logfile=s'  => \$logfile,
     'do_list=s@' => $do_list,
+    'bfg'        => \$fire_bfg,
 );
 
 usage() if $help;
@@ -44,7 +46,7 @@ my @skip_list = (
     'Expel',
     'Induct',
     'Evict',
-    'BFG',
+    #'BFG',
     'Repeal',
     'Declaration',
     'nopush',
@@ -93,6 +95,7 @@ my %have_props = ();
 foreach my $prop (@{$propositions}) {
     say "Checking: " . $prop->{name} if $debug;
     next if grep { $prop->{name} =~ /$_/i } @skip_list;
+    next if $prop->{name} =~ /BFG/i && ! $fire_bfg;
     
     push(@{ $have_props{$prop->{station}} }, $prop);
 }
@@ -128,28 +131,12 @@ say "Running station loop as $runner";
 my %planets = reverse %{ $empire->{planets} };
 
 
-my $station_list = $do_list;
-
-# if no stations were specified, do them all
-# XXX - is this even needed any more?!
-if (! @{$station_list}) {
-    # load list of station names
-    open(my $stations_fh, '<', $stations)
-        or die "Unable to read planet list from $stations: $!";
-
-    local $/;
-    my $json_text = <$stations_fh>;
-    $station_list = decode_json( $json_text );
-
-    close $stations_fh;
-}
-
-my %stations = map { $_ => 1 } @{$station_list};
+my %stations = map { $_ => 1 } @{$do_list};
 
 my @children;
 
 SS: for my $name ( sort keys %have_props ) {
-    next unless exists $stations{$name};
+    next if @{$do_list} && ! exists $stations{$name};
 
     my $planet = $client->body( id => $planets{$name} );
 

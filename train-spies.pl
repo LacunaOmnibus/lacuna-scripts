@@ -100,8 +100,13 @@ foreach my $planet (@{$planets}) {
     };
     #print "Ministry: ", Dumper($spies);
     unless (@{$spies}) {
-        print "No spies found for training on $planet\n";
+        print "\tWARNING: No spies found on $planet!!\n";
         next;
+    }
+    
+    unless (@{$spies} == 90) {
+        my $n = 90 - @{$spies};
+        print "\tNOTICE: $planet needs to recruit $n more spies <----\n";
     }
 
 
@@ -136,17 +141,17 @@ foreach my $planet (@{$planets}) {
     my %spies = ();
     my %offworld = ();
     foreach my $spy (@{$spies}) {
-        #print "$spy->{name} $spy->{assignment}\n";
-        #if ($spy->{assigned_to}{name} ne $planet && ! $offworld{$planet}{ $spy->{assigned_to}{name} }++) {
-        #    print "'$spy->{assigned_to}{name}' ne '$planet'\n";
-        #}
+        print "\tPropiganda! $planet $spy->{name} on $spy->{assignment}\n" if $spy->{assignment} =~ /Propiganda/i;
+        if ($spy->{assigned_to}{name} ne $planet && ! $offworld{$planet}{ $spy->{assigned_to}{name} }++) {
+            print "\t'$spy->{assigned_to}{name}' ne '$planet'\n";
+        }
 
         next unless $spy->{is_available};
         
         unless ($spy->{assigned_to}{name} eq $planet) {
             if ($opts{bugout} && $spy->{assignment} eq 'Idle') {
                 my $result = $ministry->assign_spy($spy->{id}, 'Bugout');
-                print "$spy->{name} ($spy->{id}), Bugout from $spy->{assigned_to}{name}: $result->{mission}{result}\n";
+                print "\t$spy->{name} ($spy->{id}), Bugout from $spy->{assigned_to}{name}: $result->{mission}{result}\n";
             }
             next;
         }
@@ -161,7 +166,7 @@ foreach my $planet (@{$planets}) {
         $name .= '-' . join('', @maxed) if @maxed;
 
         unless ($spy->{name} eq $name) {
-            print "Renaming spy: $spy->{name} -> $name\n";
+            print "\tRenaming spy: $spy->{name} -> $name\n";
             $ministry->name_spy($spy->{id}, $name);
             $spy->{name} = $name;
         }
@@ -169,7 +174,7 @@ foreach my $planet (@{$planets}) {
         if (@maxed == 4) {
             next if $spy->{assignment} eq 'Counter Espionage';
             my $result = $ministry->assign_spy($spy->{id}, 'Counter Espionage');
-            print "$spy->{name} ($spy->{id}), Counter Espionage: $result->{mission}{result}\n";
+            print "\t$spy->{name} ($spy->{id}), Counter Espionage: $result->{mission}{result}\n";
             next;
         }
         next if $spy->{assignment} =~ / Training/;
@@ -189,7 +194,7 @@ foreach my $planet (@{$planets}) {
     }
 
     unless (keys %spies) {
-        print "No spies available for training on $planet\n";
+        print "\tNo spies available for training on $planet\n";
         next;
     }
 
@@ -217,7 +222,7 @@ foreach my $planet (@{$planets}) {
 
             my $result = $ministry->assign_spy($id, $trainhash{$lesson});
             #my $result = $schools{$lesson}{building}->train_spy($id);
-            print "$spy->{name} ($id), $trainhash{$lesson}: $result->{mission}{result}\n";
+            print "\t$spy->{name} ($id), $trainhash{$lesson}: $result->{mission}{result}\n";
             next if $result->{mission}{result} eq 'Failure';
 
             delete $spies{$id};
@@ -229,6 +234,6 @@ foreach my $planet (@{$planets}) {
     foreach my $id (keys %spies) {
         next if $spies{$id}{assignment} eq 'Counter Espionage';
         my $result = $ministry->assign_spy($id, 'Counter Espionage');
-        print "$spies{$id}{name} ($id), Counter Espionage: $result->{mission}{result}\n";
+        print "\t$spies{$id}{name} ($id), Counter Espionage: $result->{mission}{result}\n";
     }
 }

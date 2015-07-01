@@ -20,6 +20,7 @@ my $max;
 my $level_max;
 my $no_halls;
 my $cfg_file;
+my @skip_list; # plans to not move
 
 my %opts = ();
 GetOptions(\%opts,
@@ -33,6 +34,7 @@ GetOptions(\%opts,
     'config=s'    => \$cfg_file,
     'planet=s',
     'empire=s',
+    'skip=s@'     => \@skip_list,
 );
 $cfg_file      ||= join('/', $opts{empire}, 'empire.yml');
 $opts{planets} ||= join('/', $opts{empire}, 'data/planets.js');
@@ -98,6 +100,13 @@ foreach my $from (@from) {
         print "\tFiltering out Halls\n";
         @plans = grep { $_->{name} !~ /Vrbansk/ } @plans;
     }
+    if (@skip_list) {
+        print "\tFiltering out skip list: @skip_list\n";
+        foreach my $skip (@skip_list) {
+            @plans = grep { $_->{name} !~ /$skip/ } @plans;
+        }
+    }
+    
 
     if ($level_max) {
         @plans =
@@ -157,7 +166,7 @@ foreach my $from (@from) {
                         $total += $plan->{quantity};
                     }
                 }
-                warn sprintf
+                print sprintf
                   "Specified ship cannot hold all plans - only pushing %d plans\n",
                   $count;
             }
